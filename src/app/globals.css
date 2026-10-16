@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  /* Greens */
+  --color-leaf-50: #f1faf1;
+  --color-leaf-100: #dff3e0;
+  --color-leaf-200: #c1e7c4;
+  --color-leaf-300: #93d59a;
+  --color-leaf-400: #7bc67e;
+  --color-leaf-500: #55a95b;
+  --color-leaf-600: #3f8a46;
+  --color-leaf-700: #356e3b;
+  --color-leaf-800: #2d5832;
+  --color-leaf-900: #26492b;
+
+  /* Yellows */
+  --color-sun-50: #fffbea;
+  --color-sun-100: #fff3c4;
+  --color-sun-200: #ffe88a;
+  --color-sun-300: #ffd166;
+  --color-sun-400: #f5c242;
+  --color-sun-500: #e6a82d;
+  --color-sun-600: #c98522;
+  --color-sun-700: #a1631e;
+
+  /* Cream / neutrals */
+  --color-cream: #fffdf6;
+  --color-cream-100: #fbf7ea;
+  --color-ink: #3a4038;
+
+  /* Rounded, friendly font stack (system fonts, no external fetch) */
+  --font-sans: ui-rounded, "SF Pro Rounded", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Soft scrollbar for a friendlier feel */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-cream-100);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-leaf-300);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-leaf-400);
+}
