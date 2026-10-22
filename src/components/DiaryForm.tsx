@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
@@ -13,6 +13,8 @@ export default function DiaryForm() {
   const locale = params.locale as string;
   const router = useRouter();
 
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [mood, setMood] = useState("happy");
   const [status, setStatus] = useState("growing");
   const [isPublic, setIsPublic] = useState(false);
@@ -20,15 +22,45 @@ export default function DiaryForm() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrlRef = useRef<string | null>(null);
+
+  function setPreviewUrl(url: string | null) {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+    }
+    previewUrlRef.current = url;
+    setPreview(url);
+  }
+
+  // Revoke any in-memory object URL when the component unmounts, so we never
+  // leak blobs (also ensures a stale preview can't survive account switches).
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = null;
+      }
+    };
+  }, []);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
-    setPreview(URL.createObjectURL(f));
+    setPreviewUrl(URL.createObjectURL(f));
   }
 
   function removeFile() {
-    setPreview(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function resetForm() {
+    setTitle("");
+    setContent("");
+    setMood("happy");
+    setStatus("growing");
+    setIsPublic(false);
+    setPreviewUrl(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -51,6 +83,9 @@ export default function DiaryForm() {
       return;
     }
 
+    // Clear the form before navigating so re-entering /diary/new always shows
+    // a blank form (fixes content lingering across submits / account switches).
+    resetForm();
     router.push("/diary");
     router.refresh();
   }
@@ -59,13 +94,19 @@ export default function DiaryForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Title */}
       <div>
-        <label className="mb-2 block text-sm font-semibold text-leaf-700">
+        <label
+          htmlFor="diary-title"
+          className="mb-2 block text-sm font-semibold text-leaf-700"
+        >
           {t("titleLabel")}
         </label>
         <input
+          id="diary-title"
           name="title"
           required
           maxLength={80}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           placeholder={t("titlePlaceholder")}
           className="w-full rounded-2xl border-2 border-leaf-200 bg-white px-4 py-3 text-leaf-800 placeholder:text-leaf-400 focus:border-leaf-400 focus:outline-none"
         />
@@ -73,9 +114,30 @@ export default function DiaryForm() {
 
       {/* Image */}
       <div>
-        <label className="mb-2 block text-sm font-semibold text-leaf-700">
+        <label
+          htmlFor="diary-image"
+          className="mb-2 block text-sm font-semibold text-leaf-700"
+        >
           {t("imageLabel")}
         </label>
+
+        {/*
+          The file input must stay mounted at all times (only visually hidden).
+          Previously it was conditionally rendered inside the "no preview"
+          branch, so once a photo was selected the input left the DOM and the
+          file was never included in FormData on submit — the saved entry ended
+          up with image_url = null.
+        */}
+        <input
+          id="diary-image"
+          ref={fileInputRef}
+          type="file"
+          name="image"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="sr-only"
+        />
+
         {preview ? (
           <div className="relative overflow-hidden rounded-2xl border-2 border-leaf-200">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -93,19 +155,14 @@ export default function DiaryForm() {
             </button>
           </div>
         ) : (
-          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-leaf-300 bg-cream-100 px-4 py-10 text-leaf-500 transition-colors hover:bg-leaf-50">
+          <label
+            htmlFor="diary-image"
+            className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-leaf-300 bg-cream-100 px-4 py-10 text-leaf-500 transition-colors hover:bg-leaf-50"
+          >
             <span className="text-4xl" aria-hidden>
               📷
             </span>
             <span className="text-sm">{t("imageHint")}</span>
-            <input
-              ref={fileInputRef}
-              type="file"
-              name="image"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="hidden"
-            />
           </label>
         )}
       </div>
@@ -160,12 +217,18 @@ export default function DiaryForm() {
 
       {/* Content */}
       <div>
-        <label className="mb-2 block text-sm font-semibold text-leaf-700">
+        <label
+          htmlFor="diary-content"
+          className="mb-2 block text-sm font-semibold text-leaf-700"
+        >
           {t("contentLabel")}
         </label>
         <textarea
+          id="diary-content"
           name="content"
           rows={5}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
           placeholder={t("contentPlaceholder")}
           className="w-full rounded-2xl border-2 border-leaf-200 bg-white px-4 py-3 text-leaf-800 placeholder:text-leaf-400 focus:border-leaf-400 focus:outline-none"
         />

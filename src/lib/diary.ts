@@ -34,5 +34,9 @@ export interface DiaryEntry {
 
 export interface Profile {
   id: string;
-  username: string;
+  username: string | null;
+  nickname: string | null;
+  succulent_years: number | null;
+  avatar_url: string | null;
+  bio: string | null;
 }

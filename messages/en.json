@@ -17,7 +17,8 @@
     "about": "About",
     "login": "Sign in",
     "logout": "Sign out",
-    "writeDiary": "Write entry"
+    "writeDiary": "Write entry",
+    "profile": "Profile"
   },
   "home": {
     "heroTitle": "Meet the cutest succulents",
@@ -150,6 +151,12 @@
     "visibilityPublic": "Share this entry publicly",
     "visibilityPrivate": "Private — only me",
     "visibilityHint": "Public entries are visible to everyone; private entries are visible only to you.",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this entry?",
+    "deleteConfirmYes": "Delete",
+    "deleteCancel": "Cancel",
+    "deleting": "Deleting…",
+    "deleteError": "Failed to delete, please try again",
     "moods": {
       "happy": "Happy",
       "calm": "Calm",
@@ -173,6 +180,8 @@
     "signUpTitle": "Sign up",
     "email": "Email",
     "password": "Password",
+    "confirmPassword": "Confirm password",
+    "passwordMismatch": "Passwords do not match",
     "signIn": "Sign in",
     "signUp": "Sign up",
     "switchingToSignUp": "No account? Create one",
@@ -193,6 +202,23 @@
     "imageSourceDesc": "All plant photos come from Wikimedia Commons under their respective free licenses (CC BY-SA, CC BY, or public domain). Full source, author and license info is in IMAGE_SOURCES.md.",
     "dataTitle": "About the data",
     "dataDesc": "Scientific names use international Latin naming; common names follow common horticultural usage. Care advice is general — always adjust to your local climate and the plant's condition."
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Complete your profile and let others get to know you",
+    "avatarLabel": "Avatar",
+    "avatarHint": "Change avatar",
+    "avatarRemove": "Remove avatar",
+    "nicknameLabel": "Nickname",
+    "nicknamePlaceholder": "e.g. Succulent Sam",
+    "yearsLabel": "Years of growing succulents",
+    "yearsPlaceholder": "e.g. 3",
+    "bioLabel": "Bio",
+    "bioPlaceholder": "A short intro about you and your succulents…",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Profile saved",
+    "errorSave": "Failed to save, please try again"
   },
   "footer": {
     "tagline": "Growing slowly, together with your succulents",

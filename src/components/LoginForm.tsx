@@ -16,6 +16,7 @@ export default function LoginForm() {
   const [mode, setMode] = useState<"signIn" | "signUp">("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
@@ -35,6 +36,12 @@ export default function LoginForm() {
     setError(null);
 
     if (mode === "signUp") {
+      if (password !== confirmPassword) {
+        setError(t("passwordMismatch"));
+        setSubmitting(false);
+        return;
+      }
+
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -148,6 +155,22 @@ export default function LoginForm() {
           className="w-full rounded-2xl border-2 border-leaf-200 bg-white px-4 py-3 text-leaf-800 focus:border-leaf-400 focus:outline-none"
         />
       </div>
+
+      {mode === "signUp" && (
+        <div>
+          <label className="mb-1.5 block text-sm font-semibold text-leaf-700">
+            {t("confirmPassword")}
+          </label>
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            minLength={6}
+            className="w-full rounded-2xl border-2 border-leaf-200 bg-white px-4 py-3 text-leaf-800 focus:border-leaf-400 focus:outline-none"
+          />
+        </div>
+      )}
 
       {error && (
         <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600">

@@ -17,7 +17,8 @@
     "about": "关于",
     "login": "登录",
     "logout": "退出登录",
-    "writeDiary": "写日记"
+    "writeDiary": "写日记",
+    "profile": "我的"
   },
   "home": {
     "heroTitle": "认识可爱的多肉植物",
@@ -150,6 +151,12 @@
     "visibilityPublic": "公开分享这篇日记",
     "visibilityPrivate": "仅自己可见",
     "visibilityHint": "公开后所有人都能看到这篇日记；私密则只有你自己可见。",
+    "delete": "删除",
+    "deleteConfirm": "确定要删除这篇日记吗？",
+    "deleteConfirmYes": "确认删除",
+    "deleteCancel": "取消",
+    "deleting": "删除中…",
+    "deleteError": "删除失败，请稍后重试",
     "moods": {
       "happy": "开心",
       "calm": "平静",
@@ -173,6 +180,8 @@
     "signUpTitle": "注册",
     "email": "邮箱",
     "password": "密码",
+    "confirmPassword": "确认密码",
+    "passwordMismatch": "两次输入的密码不一致",
     "signIn": "登录",
     "signUp": "注册",
     "switchingToSignUp": "还没有账号？注册一个",
@@ -193,6 +202,23 @@
     "imageSourceDesc": "所有多肉图片均来自 Wikimedia Commons，遵循其各自的自由许可（CC BY-SA、CC BY 或公有领域），完整来源与作者信息见 IMAGE_SOURCES.md。",
     "dataTitle": "资料说明",
     "dataDesc": "学名采用国际通用的拉丁学名，中文常见名参考国内园艺习惯。养护建议为一般性参考，具体请结合本地气候与植株状态调整。"
+  },
+  "profile": {
+    "title": "个人中心",
+    "subtitle": "完善你的资料，让大家认识你",
+    "avatarLabel": "头像",
+    "avatarHint": "更换头像",
+    "avatarRemove": "移除头像",
+    "nicknameLabel": "昵称",
+    "nicknamePlaceholder": "例如：多肉老周",
+    "yearsLabel": "种肉年龄（年）",
+    "yearsPlaceholder": "例如：3",
+    "bioLabel": "简介",
+    "bioPlaceholder": "简单介绍一下你与多肉的故事…",
+    "save": "保存",
+    "saving": "保存中…",
+    "saved": "资料已保存",
+    "errorSave": "保存失败，请稍后重试"
   },
   "footer": {
     "tagline": "和你的多肉一起，慢慢长大",

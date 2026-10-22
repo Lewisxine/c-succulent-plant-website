@@ -29,17 +29,22 @@ export default async function ExplorePage({
   const entries = (data ?? []) as DiaryEntry[];
   const hasError = Boolean(error);
 
-  // 拉取作者名（profiles 表不存在时静默降级为匿名）
+  // 拉取作者昵称（profiles 表不存在时静默降级为匿名）
   const userIds = Array.from(new Set(entries.map((e) => e.user_id)));
   let authorMap: Record<string, string> = {};
   if (userIds.length > 0) {
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select("id, username")
+      .select("id, username, nickname")
       .in("id", userIds);
     if (!profilesError && profiles) {
       authorMap = Object.fromEntries(
-        profiles.map((p: { id: string; username: string }) => [p.id, p.username])
+        profiles.map(
+          (p: { id: string; username: string | null; nickname: string | null }) => [
+            p.id,
+            p.nickname ?? p.username ?? t("anonymous"),
+          ]
+        )
       );
     }
   }

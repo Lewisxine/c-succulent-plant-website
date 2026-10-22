@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import DiaryImage from "@/components/DiaryImage";
 import AccessDenied from "@/components/AccessDenied";
+import DeleteDiaryButton from "@/components/DeleteDiaryButton";
 import { MOODS, GROWTH_STATUSES, type DiaryEntry } from "@/lib/diary";
 
 export const instant = false;
@@ -23,6 +24,10 @@ export default async function DiaryDetailPage({
 
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   // 不在这里硬编码 user_id 过滤，完全依赖 Supabase RLS 兜底：
   // - 自己的日记 / 公开日记 -> 能查到
   // - 别人的私密日记 -> 查不到（RLS 返回 0 行），下方显示友好提示
@@ -38,15 +43,21 @@ export default async function DiaryDetailPage({
     return <AccessDenied />;
   }
 
+  const isAuthor = !!user && user.id === entry.user_id;
+
   const moodEmoji = findEmoji(MOODS, entry.mood);
   const statusEmoji = findEmoji(GROWTH_STATUSES, entry.growth_status);
 
   const { data: profileData } = await supabase
     .from("profiles")
-    .select("username")
+    .select("username, nickname")
     .eq("id", entry.user_id)
     .single();
-  const authorName = (profileData as { username?: string } | null)?.username;
+  const authorProfile = (profileData as {
+    username?: string | null;
+    nickname?: string | null;
+  } | null);
+  const authorName = authorProfile?.nickname ?? authorProfile?.username ?? null;
 
   const dateFormatter = new Intl.DateTimeFormat(
     locale === "zh" ? "zh-CN" : "en-US",
@@ -55,12 +66,18 @@ export default async function DiaryDetailPage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <Link
-        href={`/${locale}/diary`}
-        className="mb-6 inline-block rounded-full px-4 py-2 text-sm font-medium text-leaf-600 transition-colors hover:bg-leaf-100"
-      >
-        ← {tc("backToList")}
-      </Link>
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <Link
+          href={`/${locale}/diary`}
+          className="inline-block rounded-full px-4 py-2 text-sm font-medium text-leaf-600 transition-colors hover:bg-leaf-100"
+        >
+          ← {tc("backToList")}
+        </Link>
+
+        {isAuthor && (
+          <DeleteDiaryButton diaryId={entry.id} locale={locale} />
+        )}
+      </div>
 
       <article className="overflow-hidden rounded-3xl border border-leaf-100 bg-white shadow-sm">
         {entry.image_url && (

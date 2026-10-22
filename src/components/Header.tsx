@@ -62,6 +62,12 @@ export default function Header() {
           {user ? (
             <div className="hidden items-center gap-2 md:flex">
               <Link
+                href="/profile"
+                className="rounded-full border border-leaf-200 px-4 py-2 text-sm font-medium text-leaf-700 transition-colors hover:bg-leaf-100"
+              >
+                {t("nav.profile")}
+              </Link>
+              <Link
                 href="/diary/new"
                 className="rounded-full bg-leaf-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-leaf-600"
               >
@@ -130,6 +136,13 @@ export default function Header() {
             <div className="mt-2 flex flex-col gap-2 border-t border-leaf-100 pt-3">
               {user ? (
                 <>
+                  <Link
+                    href="/profile"
+                    onClick={() => setMenuOpen(false)}
+                    className="rounded-xl border border-leaf-200 px-4 py-2.5 text-center text-sm font-medium text-leaf-700"
+                  >
+                    {t("nav.profile")}
+                  </Link>
                   <Link
                     href="/diary/new"
                     onClick={() => setMenuOpen(false)}

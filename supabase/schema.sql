@@ -97,25 +97,43 @@ create policy "Auth delete diary-images"
     and (storage.foldername(name))[1] = auth.uid()::text
   );
 
--- 3) 用户资料表（用于展示作者名） -----------------------------
+-- 3) 用户资料表（作者昵称 + 个人中心） -----------------------
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
-  username text not null,
+  username text,                          -- 注册用户名（可空；未填写时为 null）
+  nickname text,                          -- 展示昵称（个人中心可修改）
+  succulent_years int,                    -- 种肉年龄（年）
+  avatar_url text,                        -- 头像 URL
+  bio text,                               -- 简介
   created_at timestamptz not null default now()
 );
 
--- 注册时自动创建 profile；用户名优先取注册时传入的 username，
--- 否则用 user_<8位uuid前缀> 兜底（不暴露邮箱）
+-- 兼容旧版 profiles 表：补充缺失列（幂等，已存在则跳过）
+alter table public.profiles add column if not exists nickname text;
+alter table public.profiles add column if not exists succulent_years int;
+alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists bio text;
+alter table public.profiles alter column username drop not null;
+
+-- 清理旧版生成的 user_<id前缀> 用户名（改为 null，展示层回退到「匿名」）
+update public.profiles set username = null where username like 'user\_%';
+
+-- 注册时自动创建 profile；昵称优先取注册时传入的 nickname，
+-- 其次 username；都不填则为 null（页面显示「匿名」）。
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, username)
+  insert into public.profiles (id, username, nickname)
   values (
     new.id,
-    coalesce(nullif(new.raw_user_meta_data->>'username', ''), 'user_' || left(new.id::text, 8))
+    nullif(new.raw_user_meta_data->>'username', ''),
+    coalesce(
+      nullif(new.raw_user_meta_data->>'nickname', ''),
+      nullif(new.raw_user_meta_data->>'username', '')
+    )
   )
   on conflict (id) do nothing;
   return new;
@@ -128,14 +146,13 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- 为已存在的用户补齐 profile（一次性回填）
-insert into public.profiles (id, username)
-select id, 'user_' || left(id::text, 8)
-from auth.users
+insert into public.profiles (id)
+select id from auth.users
 on conflict (id) do nothing;
 
 alter table public.profiles enable row level security;
 
--- 所有人可读（用于展示作者名）
+-- 所有人可读（用于展示作者昵称与个人主页）
 drop policy if exists "profiles_read_public" on public.profiles;
 create policy "profiles_read_public"
   on public.profiles
@@ -150,6 +167,48 @@ create policy "profiles_update_own"
   to authenticated
   using (auth.uid() = id)
   with check (auth.uid() = id);
+
+-- 本人可创建（补登）自己的资料（配合页面 upsert 使用）
+drop policy if exists "profiles_insert_own" on public.profiles;
+create policy "profiles_insert_own"
+  on public.profiles
+  for insert
+  to authenticated
+  with check (auth.uid() = id);
+
+-- 3b) 头像存储桶 --------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do nothing;
+
+-- 所有人可读
+drop policy if exists "Public read avatars" on storage.objects;
+create policy "Public read avatars"
+  on storage.objects
+  for select
+  using (bucket_id = 'avatars');
+
+-- 登录用户可上传到自己的目录（avatars/<user_id>/...）
+drop policy if exists "Auth upload avatars" on storage.objects;
+create policy "Auth upload avatars"
+  on storage.objects
+  for insert
+  to authenticated
+  with check (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- 登录用户可覆盖（upsert）自己目录下的头像
+drop policy if exists "Auth update avatars" on storage.objects;
+create policy "Auth update avatars"
+  on storage.objects
+  for update
+  to authenticated
+  using (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
 
 -- 4) 多肉词条表（用户投稿） ---------------------------------
 -- 注：文本字段为中英双语（*_zh / *_en），拉丁学名经 GBIF 核验。

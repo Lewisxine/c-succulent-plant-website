@@ -54,14 +54,17 @@ export default async function PlantEntryDetailPage({
     rejected: tm("statusRejected"),
   };
 
-  // 作者名（profiles 表不存在时静默降级）
-  let authorName: string | undefined;
+  // 作者昵称（profiles 表不存在时静默降级；昵称为空时不展示）
   const { data: profileData } = await supabase
     .from("profiles")
-    .select("username")
+    .select("username, nickname")
     .eq("id", entry.created_by)
     .single();
-  authorName = (profileData as { username?: string } | null)?.username;
+  const authorProfile = profileData as {
+    username?: string | null;
+    nickname?: string | null;
+  } | null;
+  const authorName = authorProfile?.nickname ?? authorProfile?.username ?? null;
 
   const dateFormatter = new Intl.DateTimeFormat(
     locale === "zh" ? "zh-CN" : "en-US",

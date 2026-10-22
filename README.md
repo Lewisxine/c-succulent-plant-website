@@ -53,9 +53,10 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 
 - `diaries` 表（含行级安全 RLS：公开日记所有人可读，私密日记仅本人可读、增、删、改）
 - `plants` 表（社区投稿词条，含 `created_by` 上传者、`status` 审核状态、`*_zh` / `*_en` 双语字段、`scientific_name_verified` 学名核验标记；RLS：仅 `approved` 词条公开可读，本人可读自己的词条，登录用户可投稿且强制 `status = 'pending'`）
-- `profiles` 表（作者名，注册时自动创建，所有人可读）
+- `profiles` 表（作者昵称 + 个人资料：昵称、种肉年龄、头像、简介；注册时自动创建，所有人可读，仅本人可改）
 - `diary-images` 存储桶（公开读，登录用户可上传到自己的目录）
 - `plant-images` 存储桶（词条封面图，公开读，登录用户可上传到自己的目录）
+- `avatars` 存储桶（头像，公开读，登录用户可上传/覆盖到自己的目录）
 
 ### 词条审核
 

@@ -75,6 +75,112 @@ export async function createDiaryEntry(
   return { success: true };
 }
 
+export type DeleteDiaryResult = { success: true } | { error: string };
+
+export async function deleteDiaryEntry(
+  diaryId: string,
+  locale: string
+): Promise<DeleteDiaryResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "not-authenticated" };
+  }
+
+  // RLS (`diaries_delete_own`) ensures only auth.uid() = user_id can delete.
+  const { error } = await supabase
+    .from("diaries")
+    .delete()
+    .eq("id", diaryId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath(`/${locale}/diary`);
+  revalidatePath(`/${locale}/explore`);
+  return { success: true };
+}
+
+export type UpdateProfileResult = { success: true } | { error: string };
+
+export async function updateProfile(
+  formData: FormData,
+  locale: string
+): Promise<UpdateProfileResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "not-authenticated" };
+  }
+
+  const nickname = (formData.get("nickname") as string)?.trim() || null;
+  const bio = (formData.get("bio") as string)?.trim() || null;
+
+  const yearsRaw = (formData.get("succulent_years") as string)?.trim();
+  const succulentYears = yearsRaw ? Number(yearsRaw) : null;
+
+  if (nickname && nickname.length > 30) {
+    return { error: "nickname-too-long" };
+  }
+  if (
+    succulentYears !== null &&
+    (!Number.isInteger(succulentYears) || succulentYears < 0 || succulentYears > 100)
+  ) {
+    return { error: "invalid-years" };
+  }
+
+  let avatarUrl = (formData.get("avatar_url") as string)?.trim() || null;
+  const file = formData.get("avatar") as File | null;
+
+  if (file && file.size > 0) {
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_SIZE) {
+      return { error: "file-too-large" };
+    }
+
+    // 固定文件名，覆盖式上传：每次保存都覆盖同一对象，避免头像文件无限堆积。
+    const filename = `${user.id}/avatar`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(filename, file, { upsert: true, contentType: file.type });
+
+    if (uploadError) {
+      return { error: uploadError.message };
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(filename);
+    // 附加时间戳 query 跳过浏览器/CDN 缓存，让新头像保存后立即生效
+    avatarUrl = `${publicUrlData.publicUrl}?v=${Date.now()}`;
+  }
+
+  const { error: upsertError } = await supabase.from("profiles").upsert({
+    id: user.id,
+    nickname,
+    succulent_years: succulentYears,
+    avatar_url: avatarUrl,
+    bio,
+  });
+
+  if (upsertError) {
+    return { error: upsertError.message };
+  }
+
+  revalidatePath(`/${locale}/profile`);
+  return { success: true };
+}
+
 export type CreatePlantResult = { success: true } | { error: string };
 
 export async function createPlantEntry(

@@ -149,9 +149,27 @@ export default function PlantForm() {
 
       {/* Cover image */}
       <div>
-        <label className="mb-2 block text-sm font-semibold text-leaf-700">
+        <label
+          htmlFor="plant-image"
+          className="mb-2 block text-sm font-semibold text-leaf-700"
+        >
           {t("imageLabel")}
         </label>
+
+        {/*
+          Keep the file input mounted at all times so the selected file is
+          included in FormData on submit (see DiaryForm for the same fix).
+        */}
+        <input
+          id="plant-image"
+          ref={fileInputRef}
+          type="file"
+          name="image"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="sr-only"
+        />
+
         {preview ? (
           <div className="relative overflow-hidden rounded-2xl border-2 border-leaf-200">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -169,19 +187,14 @@ export default function PlantForm() {
             </button>
           </div>
         ) : (
-          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-leaf-300 bg-cream-100 px-4 py-10 text-leaf-500 transition-colors hover:bg-leaf-50">
+          <label
+            htmlFor="plant-image"
+            className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-leaf-300 bg-cream-100 px-4 py-10 text-leaf-500 transition-colors hover:bg-leaf-50"
+          >
             <span className="text-4xl" aria-hidden>
               🪴
             </span>
             <span className="text-sm">{t("imageHint")}</span>
-            <input
-              ref={fileInputRef}
-              type="file"
-              name="image"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="hidden"
-            />
           </label>
         )}
       </div>
