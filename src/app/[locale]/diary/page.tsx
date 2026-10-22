@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import DiaryImage from "@/components/DiaryImage";
 import { MOODS, GROWTH_STATUSES, type DiaryEntry } from "@/lib/diary";
 
 export const instant = false;
@@ -19,9 +21,18 @@ export default async function DiaryPage({
   const t = await getTranslations("diary");
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(`/${locale}/login`);
+  }
+
   const { data, error } = await supabase
-    .from("diary_entries")
+    .from("diaries")
     .select("*")
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
   const entries = (data ?? []) as DiaryEntry[];
@@ -77,12 +88,11 @@ export default async function DiaryPage({
               >
                 {entry.image_url && (
                   <div className="aspect-[4/3] overflow-hidden bg-cream-100">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <DiaryImage
                       src={entry.image_url}
                       alt={entry.title}
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      loading="lazy"
+                      fallbackClassName="h-full w-full"
                     />
                   </div>
                 )}

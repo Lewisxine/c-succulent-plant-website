@@ -15,6 +15,7 @@ export default function DiaryForm() {
 
   const [mood, setMood] = useState("happy");
   const [status, setStatus] = useState("growing");
+  const [isPublic, setIsPublic] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +41,7 @@ export default function DiaryForm() {
     const formData = new FormData(form);
     formData.set("mood", mood);
     formData.set("growth_status", status);
+    formData.set("is_public", isPublic ? "true" : "false");
 
     const result = await createDiaryEntry(formData, locale);
     setSubmitting(false);
@@ -167,6 +169,41 @@ export default function DiaryForm() {
           placeholder={t("contentPlaceholder")}
           className="w-full rounded-2xl border-2 border-leaf-200 bg-white px-4 py-3 text-leaf-800 placeholder:text-leaf-400 focus:border-leaf-400 focus:outline-none"
         />
+      </div>
+
+      {/* Visibility */}
+      <div>
+        <span className="mb-2 block text-sm font-semibold text-leaf-700">
+          {t("visibilityLabel")}
+        </span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={isPublic}
+          onClick={() => setIsPublic((v) => !v)}
+          className={`flex w-full items-center justify-between gap-3 rounded-2xl border-2 px-4 py-3 text-left transition-colors ${
+            isPublic
+              ? "border-leaf-400 bg-leaf-50"
+              : "border-leaf-200 bg-white hover:bg-leaf-50"
+          }`}
+        >
+          <span className="flex items-center gap-2 text-sm text-leaf-700">
+            <span aria-hidden>{isPublic ? "🌍" : "🔒"}</span>
+            {t(isPublic ? "visibilityPublic" : "visibilityPrivate")}
+          </span>
+          <span
+            className={`relative inline-flex h-6 w-11 flex-none shrink-0 rounded-full transition-colors ${
+              isPublic ? "bg-leaf-500" : "bg-leaf-200"
+            }`}
+          >
+            <span
+              className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                isPublic ? "translate-x-5" : ""
+              }`}
+            />
+          </span>
+        </button>
+        <p className="mt-1.5 text-xs text-leaf-500/80">{t("visibilityHint")}</p>
       </div>
 
       {error && (

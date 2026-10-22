@@ -437,3 +437,45 @@ export const succulents: Succulent[] = [
 export function getSucculent(slug: string): Succulent | undefined {
   return succulents.find((s) => s.slug === slug);
 }
+
+// ---- 用户投稿词条（存在 Supabase `plants` 表） ----
+
+export const CARE_DIFFICULTIES: { value: Difficulty; emoji: string }[] = [
+  { value: "easy", emoji: "🌱" },
+  { value: "medium", emoji: "🌿" },
+  { value: "hard", emoji: "🌵" },
+];
+
+export type PlantStatus = "pending" | "approved" | "rejected";
+
+export interface PlantSubmission {
+  id: string;
+  created_by: string;
+  name_zh: string;
+  name_en: string | null;
+  scientific_name: string | null;
+  scientific_name_authority: string | null;
+  scientific_name_verified: boolean;
+  family_zh: string | null;
+  family_en: string | null;
+  genus_zh: string | null;
+  genus_en: string | null;
+  growth_habit_zh: string | null;
+  growth_habit_en: string | null;
+  description_zh: string | null;
+  description_en: string | null;
+  care_difficulty: Difficulty;
+  image_url: string | null;
+  status: PlantStatus;
+  created_at: string;
+}
+
+/** 按当前语言取双语字段，目标语言缺失时回退到另一语言。 */
+export function pickLocale(
+  zh: string | null | undefined,
+  en: string | null | undefined,
+  locale: string
+): string {
+  if (locale === "en") return en ?? zh ?? "";
+  return zh ?? en ?? "";
+}

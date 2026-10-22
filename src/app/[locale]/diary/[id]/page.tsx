@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import DiaryImage from "@/components/DiaryImage";
+import AccessDenied from "@/components/AccessDenied";
 import { MOODS, GROWTH_STATUSES, type DiaryEntry } from "@/lib/diary";
 
 export const instant = false;
@@ -21,17 +22,31 @@ export default async function DiaryDetailPage({
   const tc = await getTranslations("common");
 
   const supabase = await createClient();
+
+  // 不在这里硬编码 user_id 过滤，完全依赖 Supabase RLS 兜底：
+  // - 自己的日记 / 公开日记 -> 能查到
+  // - 别人的私密日记 -> 查不到（RLS 返回 0 行），下方显示友好提示
   const { data } = await supabase
-    .from("diary_entries")
+    .from("diaries")
     .select("*")
     .eq("id", id)
     .single();
 
-  const entry = data as DiaryEntry | null;
-  if (!entry) notFound();
+  const entry = (data ?? null) as DiaryEntry | null;
+
+  if (!entry) {
+    return <AccessDenied />;
+  }
 
   const moodEmoji = findEmoji(MOODS, entry.mood);
   const statusEmoji = findEmoji(GROWTH_STATUSES, entry.growth_status);
+
+  const { data: profileData } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("id", entry.user_id)
+    .single();
+  const authorName = (profileData as { username?: string } | null)?.username;
 
   const dateFormatter = new Intl.DateTimeFormat(
     locale === "zh" ? "zh-CN" : "en-US",
@@ -50,11 +65,11 @@ export default async function DiaryDetailPage({
       <article className="overflow-hidden rounded-3xl border border-leaf-100 bg-white shadow-sm">
         {entry.image_url && (
           <div className="max-h-[480px] overflow-hidden bg-cream-100">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <DiaryImage
               src={entry.image_url}
               alt={entry.title}
               className="h-full w-full object-cover"
+              fallbackClassName="min-h-[280px] w-full"
             />
           </div>
         )}
@@ -76,6 +91,13 @@ export default async function DiaryDetailPage({
           <h1 className="mt-4 text-2xl font-bold text-leaf-800 md:text-3xl">
             {entry.title}
           </h1>
+
+          {authorName && (
+            <p className="mt-2 flex items-center gap-1 text-xs text-leaf-500/80">
+              <span aria-hidden>👤</span>
+              {authorName}
+            </p>
+          )}
 
           <p className="mt-2 text-xs text-leaf-500/80">
             {t("postedOn", { date: dateFormatter.format(new Date(entry.created_at)) })}

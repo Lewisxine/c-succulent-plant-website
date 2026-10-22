@@ -28,5 +28,11 @@ export interface DiaryEntry {
   growth_status: string | null;
   title: string;
   content: string;
+  is_public: boolean;
   created_at: string;
+}
+
+export interface Profile {
+  id: string;
+  username: string;
 }

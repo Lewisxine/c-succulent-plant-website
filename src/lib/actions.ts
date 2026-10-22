@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { detectLanguage, localizeField } from "@/lib/translate";
+import { verifyScientificName } from "@/lib/verify-name";
 
 export type CreateDiaryResult = { success: true } | { error: string };
 
@@ -23,6 +25,7 @@ export async function createDiaryEntry(
   const content = (formData.get("content") as string)?.trim();
   const mood = (formData.get("mood") as string) || null;
   const growthStatus = (formData.get("growth_status") as string) || null;
+  const isPublic = formData.get("is_public") === "true";
   const file = formData.get("image") as File | null;
 
   if (!title) {
@@ -54,13 +57,14 @@ export async function createDiaryEntry(
     imageUrl = publicUrlData.publicUrl;
   }
 
-  const { error: insertError } = await supabase.from("diary_entries").insert({
+  const { error: insertError } = await supabase.from("diaries").insert({
     user_id: user.id,
     title,
     content,
     mood,
     growth_status: growthStatus,
     image_url: imageUrl,
+    is_public: isPublic,
   });
 
   if (insertError) {
@@ -68,5 +72,115 @@ export async function createDiaryEntry(
   }
 
   revalidatePath(`/${locale}/diary`);
+  return { success: true };
+}
+
+export type CreatePlantResult = { success: true } | { error: string };
+
+export async function createPlantEntry(
+  formData: FormData,
+  locale: string
+): Promise<CreatePlantResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "not-authenticated" };
+  }
+
+  const name = (formData.get("name") as string)?.trim();
+  const scientificName = (formData.get("scientific_name") as string)?.trim() || null;
+  const family = (formData.get("family") as string)?.trim() || null;
+  const genus = (formData.get("genus") as string)?.trim() || null;
+  const growthHabit = (formData.get("growth_habit") as string)?.trim() || null;
+  const careDifficulty = (formData.get("care_difficulty") as string) || "medium";
+  const description = (formData.get("description") as string)?.trim() || null;
+  const file = formData.get("image") as File | null;
+
+  if (!name) {
+    return { error: "missing-name" };
+  }
+
+  // 1) 语言检测：以名称等文本判断，兜底用提交时的 locale。
+  const source = detectLanguage(
+    name || family || genus || growthHabit || description || (locale === "en" ? "en" : "zh")
+  );
+
+  // 2) 自动翻译成中英双语（翻译失败时对应语言为 null，展示层回退到源语言）。
+  const [namePair, familyPair, genusPair, habitPair, descPair] = await Promise.all([
+    localizeField(name, source),
+    localizeField(family, source),
+    localizeField(genus, source),
+    localizeField(growthHabit, source),
+    localizeField(description, source),
+  ]);
+
+  // 3) 学名校验：GBIF 精确匹配才标记为已核验，并写回规范名与命名人。
+  let scientificNameVerified = false;
+  let canonicalName = scientificName;
+  let authority: string | null = null;
+  if (scientificName) {
+    const verified = await verifyScientificName(scientificName);
+    if (verified) {
+      scientificNameVerified = true;
+      canonicalName = verified.canonicalName;
+      authority = verified.authority;
+    }
+  }
+
+  let imageUrl: string | null = null;
+
+  if (file && file.size > 0) {
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_SIZE) {
+      return { error: "file-too-large" };
+    }
+
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const filename = `${user.id}/${crypto.randomUUID()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("plant-images")
+      .upload(filename, file, { upsert: false, contentType: file.type });
+
+    if (uploadError) {
+      return { error: uploadError.message };
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("plant-images")
+      .getPublicUrl(filename);
+    imageUrl = publicUrlData.publicUrl;
+  }
+
+  const { error: insertError } = await supabase.from("plants").insert({
+    created_by: user.id,
+    name_zh: namePair.zh,
+    name_en: namePair.en,
+    scientific_name: canonicalName,
+    scientific_name_authority: authority,
+    scientific_name_verified: scientificNameVerified,
+    family_zh: familyPair.zh,
+    family_en: familyPair.en,
+    genus_zh: genusPair.zh,
+    genus_en: genusPair.en,
+    growth_habit_zh: habitPair.zh,
+    growth_habit_en: habitPair.en,
+    description_zh: descPair.zh,
+    description_en: descPair.en,
+    care_difficulty: careDifficulty,
+    image_url: imageUrl,
+    status: "pending",
+  });
+
+  if (insertError) {
+    return { error: insertError.message };
+  }
+
+  revalidatePath(`/${locale}/plants`);
+  revalidatePath(`/${locale}/plants/mine`);
   return { success: true };
 }

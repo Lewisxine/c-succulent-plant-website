@@ -1,40 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "./AuthProvider";
 import LanguageSwitcher from "./LanguageSwitcher";
-
-type User = { email?: string } | null;
 
 export default function Header() {
   const t = useTranslations();
   const pathname = usePathname();
-  const supabase = createClient();
-  const [user, setUser] = useState<User>(null);
+  const { user, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => listener.subscription.unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   async function handleLogout() {
-    await supabase.auth.signOut();
-    setUser(null);
+    await signOut();
     setMenuOpen(false);
   }
 
   const navItems = [
     { href: "/", label: t("nav.home") },
     { href: "/plants", label: t("nav.plants") },
+    { href: "/explore", label: t("nav.explore") },
     { href: "/diary", label: t("nav.diary") },
     { href: "/about", label: t("nav.about") },
   ];

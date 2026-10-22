@@ -49,8 +49,8 @@ export default async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     // Match all pathnames except:
-    // - paths starting with /api, /trpc, /_next, /_vercel
+    // - paths starting with /api, /trpc, /_next, /_vercel, /auth
     // - paths containing a dot (e.g. favicon.ico)
-    "/((?!api|trpc|_next|_vercel|.*\\..*).*)",
+    "/((?!api|trpc|_next|_vercel|auth|.*\\..*).*)",
   ],
 };
